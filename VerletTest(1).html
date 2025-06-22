@@ -1,0 +1,129 @@
+<html>
+<body style=background-color:gray; >
+<center><canvas id="canvas" width=700 height=700></canvas><div id="t1"></div>X POUR COMMENCER, CLIC DE SOURIS POUR AJOUTER UNE BABALLE, ESPACE POUR AJOUTER UNE GROSSE BABALLE</center>
+<script>
+document.onkeydown=e=>{
+	if(e.key=="x" && (go=!go)) main()
+	if(e.key==" "){
+		let a=new Ball(mouse.x,mouse.y,80)
+	}
+}
+let mouse={x:0,y:0}
+document.onmousemove=mm
+document.onmousedown=(e)=>{new Ball(mouse.x,mouse.y)}
+function mm(e){
+	mouse=getMousePos(document.getElementById("canvas"),e)
+	mouse.x-=W/2
+	mouse.y=H/2-mouse.y
+}
+function getMousePos(canvas, evt) {
+    var rect = canvas.getBoundingClientRect();
+    return {
+        x: (evt.clientX - rect.left) / (rect.right - rect.left) * canvas.width,
+        y: (evt.clientY - rect.top) / (rect.bottom - rect.top) * canvas.height
+    };
+}
+const W=700
+const H=700
+const ctx=document.getElementById("canvas").getContext("2d")
+function circle(x,y,c="white",w=2){
+	ctx.beginPath()
+	ctx.arc(x+ W/2, H/2-y, w, 0, Math.PI*2) 
+	ctx.fillStyle=c
+	ctx.fill()
+}
+function line(x,y,x2,y2){//coords virtuelles
+	ctx.moveTo(x*zoom+W/2,H/2-y*zoom)
+	ctx.lineTo(W/2+x2*zoom,H/2-y2*zoom)
+}
+function eff(c="black"){
+	ctx.fillStyle=c
+	ctx.fillRect(0,0,W,H)
+	circle(0,0,"lightgray",W/2)
+}
+class Ball{
+	static l=[]
+	//static grid=[]
+	constructor(x,y,r=-1){
+		this.x=x
+		this.y=y
+		this.r=(r==-1)?Math.random()*10+5:r
+		this.coll()
+		this.ax=this.x
+		this.ay=this.y
+		this.col=`rgb(${Math.floor(Math.random()*256)},${Math.floor(Math.random()*256)},${Math.floor(Math.random()*256)})`
+		Ball.l.push(this)
+	}
+	aff(){
+		circle(this.x,this.y,this.col,this.r)
+	}
+	actu(dt=1,i=1){
+		let inu=[this.x,this.y]
+		let a=[0,grav]
+		
+		this.x+=this.x-this.ax+a[0]*dt*dt
+		this.y+=this.y-this.ay+a[1]*dt*dt
+		this.ax=inu[0]
+		this.ay=inu[1]
+		this.coll()
+		
+		if(i) this.aff()
+	}
+	coll(){
+		let r2=this.x**2+this.y**2
+		if(r2>(W/2-this.r)**2){
+			let r=Math.sqrt(r2)
+			this.x=this.x*(W/2-this.r)/r
+			this.y=this.y*(W/2-this.r)/r
+		}
+	}
+	static actuAll(n=20){
+		for(let t=0;t<n;t++){
+			for(let i in Ball.l) Ball.l[i].actu(1/n,t==n-1)
+			Ball.collAll()
+			
+		}
+	}
+	static collAll(){
+		let n=Ball.l.length
+		for(let i=0;i<n-1;i++){
+			for(let j=i+1;j<n;j++){
+				let a=Ball.l[i]
+				let b=Ball.l[j]
+				let d2=(a.x-b.x)**2+(a.y-b.y)**2
+				if(d2<(a.r+b.r)**2){
+					let d=Math.sqrt(d2)
+					let u=[b.x-a.x,b.y-a.y]
+					let c1=(a.r**2)/(a.r**2+b.r**2)
+					u=[u[0]/d,u[1]/d]
+					let dec=a.r+b.r-d
+					b.x+=dec*u[0]*c1
+					b.y+=dec*u[1]*c1
+					a.x-=dec*u[0]*(1-c1)
+					a.y-=dec*u[1]*(1-c1)
+				}
+			}
+		}
+	}
+}
+let go=0
+let grav=-0.5
+let fps=0
+for(let i=0;i<300;i++) new Ball((Math.random()-0.5)*400,(Math.random()-0.5)*400)
+function main(){
+	fps++
+	eff()
+	Ball.actuAll()
+	if(!go) return; 
+	window.requestAnimationFrame(main)
+}
+main()
+cfps()
+function cfps(){
+	document.getElementById("t1").innerHTML="fps : "+fps*2
+	fps=0
+	setTimeout(cfps,500)
+}
+</script>
+</body>   
+</html>
